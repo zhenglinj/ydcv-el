@@ -23,13 +23,14 @@ except ImportError:
     sys.setdefaultencoding('utf8')
 
 try:
-    from pystardict import Dictionary
+    from lib.pystardict import Dictionary
 except ImportError:
     print("No pystardict module")
 
 
 API = "YouDaoCV"
 API_KEY = "659600698"
+DICTS_PKL = "dicts.pkl"
 
 
 class Colorizing(object):
@@ -113,7 +114,7 @@ def print_explanation(data, options):
             print()
 
         if 'explains' in _b:
-            print(_c('  Word Explanation:', 'cyan'))
+            print(_c('--> Word Explanation:', 'cyan'))
             print(*map("     * {0}".format, _b['explains']), sep='\n')
         else:
             print()
@@ -130,7 +131,7 @@ def print_explanation(data, options):
         # web reference
         if 'web' in _d:
             has_result = True
-            print(_c('\n  Web Reference:', 'cyan'))
+            print(_c('\n--> Web Reference:', 'cyan'))
 
             web = _d['web'] if options.full else _d['web'][:3]
             print(*[
@@ -142,7 +143,7 @@ def print_explanation(data, options):
         # Online resources
         ol_res = online_resources(query)
         if len(ol_res) > 0:
-            print(_c('\n  Online Resource:', 'cyan'))
+            print(_c('\n--> Online Resource:', 'cyan'))
             res = ol_res if options.full else ol_res[:1]
             print(*map(('     * ' + _c('{0}', 'underline')).format, res), sep='\n')
 
@@ -159,7 +160,7 @@ def lookup_word(word):
         data = urlopen(
             "http://fanyi.youdao.com/openapi.do?keyfrom={0}&"
             "key={1}&type=data&doctype=json&version=1.1&q={2}"
-            .format(API, API_KEY, word)).read().decode("utf-8")
+            .format(API, API_KEY, word), data=None, timeout=1).read().decode("utf-8")
     except IOError:
         print("Network is unavailable")
     else:
@@ -169,17 +170,26 @@ def lookup_word(word):
             print("Content explanation error")
 
 
-def lookup_word_sdcv(word):
+def print_explanation_sdcv(dict_name, data, options):
+    _c = Colorizing.colorize
+    _d = '  '+'\n  '.join(data.split('\n'))
+    print(_c('--> '+dict_name, 'cyan'))
+    print(_d, '\n')
+
+
+def lookup_word_sdcv(dicts, word):
     word = quote(word)
-    print("Stardict:")
-    try:
-        data = dict1[word]
-    except KeyError:
-        print("Not founded")
-    else:
-        print('--> ', str(dict1).split()[2])
-        data = '\n     '.join(data.split('\n'))
-        print(data)
+    word = word.lower()
+    _c = Colorizing.colorize
+    print("Stardict:\n", _c(word, 'underline'), sep='')
+    for dict1 in dicts:
+        try:
+            data = dict1[word]
+        except KeyError:
+            print("Not founded")
+        else:
+            dict_name = str(dict1).split()[2]
+            print_explanation_sdcv(dict_name, data, options)
     print()
 
 
@@ -212,20 +222,25 @@ if __name__ == "__main__":
                         help="use this directory as path to stardict data directory. "
                              "Default to '$(HOME)/.stardict/dic'.")
     parser.add_argument('-u', '--usedict',
-                        default='21世纪英汉汉英双向词典',
+                        default='',
                         help="for search use only dictionary with this bookname. "
-                             "Default to '21世纪英汉汉英双向词典'.")
+                             "Default to ALL dictionary.")
     parser.add_argument('-n', '--noninteractive',
                         help="for use in scripts")
 
     options = parser.parse_args()
-    dict1 = Dictionary(os.path.join(options.dictsdir,
-                                    'stardict-21shijishuangxiangcidian-2.4.2',
-                                    '21shijishuangxiangcidian'))
+    # find all dictionary
+    dicts = []
+    for root, dirs, files in os.walk(options.dictsdir):
+        for fn in files:
+            if (fn.endswith('.dict.dz')
+                and fn.startswith(options.usedict)):
+                dict_path = os.path.join(options.dictsdir, root, fn[:-8])
+                dicts.append(Dictionary(dict_path))
 
     if options.words:
         for word in options.words:
-            lookup_word_sdcv(word)
+            lookup_word_sdcv(dicts, word)
             lookup_word(word)
     else:
         if options.selection:
@@ -238,7 +253,7 @@ if __name__ == "__main__":
                     if curr != last:
                         last = curr
                         if last.strip():
-                            lookup_word_sdcv(word)
+                            lookup_word_sdcv(dicts, word)
                             lookup_word(last)
                         print("Waiting for selection>")
                 except (KeyboardInterrupt, EOFError):
@@ -255,7 +270,7 @@ if __name__ == "__main__":
                     else:
                         words = raw_input('> ')
                     if words.strip():
-                        lookup_word_sdcv(words)
+                        lookup_word_sdcv(dicts, words)
                         lookup_word(words)
                 except KeyboardInterrupt:
                     print()

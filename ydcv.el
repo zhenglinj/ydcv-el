@@ -144,6 +144,11 @@
   :type 'string
   :group 'ydcv)
 
+(defcustom ydcv-py-directory ""
+  "The name of the buffer of ydcv."
+  :type 'string
+  :group 'ydcv)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Variable ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar ydcv-previous-window-configuration nil
   "Window configuration before switching to ydcv buffer.")
@@ -242,7 +247,7 @@ And show information in other buffer."
 And show information use tooltip."
   (interactive)
   ;; Display simple translate result.
-  (ydcv-search-simple (or word (ydcv-prompt-input)))
+  (ydcvp-search-simple (or word (ydcv-prompt-input)))
   ;; I set this delay for fast finger.
   (sit-for 0.5))
 
@@ -317,7 +322,8 @@ The result will be displayed in buffer named with
             ;;  (ydcv-search-with-dictionary word ydcv-dictionary-complete-list))
             (apply 'start-process
                    (append `("ydcv" ,ydcv-buffer-name)
-                           (list (format "python %sydcv.py" default-directory))
+                           ;; (list (format "/usr/bin/python %sydcv.py" default-directory))
+                           (list (format "%sydcv.py" default-directory))
                            (ydcv-search-args word ydcv-dictionary-complete-list))
                    )))
       (set-process-sentinel
@@ -353,7 +359,8 @@ Argument DICTIONARY-LIST the word that need transform."
     (ydcv-filter
      (mapconcat
       (lambda (dict)
-        (setq cmd (format "python %sydcv.py -n -u \"%s\" \"%s\"" default-directory dict word))
+        ;; (setq cmd (format "python %sydcv.py -n -u \"%s\" \"%s\"" default-directory dict word))
+        (setq cmd (format "%sydcv.py -u \"%s\" \"%s\"" default-directory dict word))
 	(shell-command-to-string cmd))
       dictionary-list "\n")
      )))
@@ -414,7 +421,11 @@ Otherwise return word around point."
     (thing-at-point 'word)))
 
 
-(defun ydcv-search-word (word)
+;; -------------------------------------------------
+;; self define
+;; -------------------------------------------------
+
+(defun ydcv-search-word (word dictionary-list)
   "Search some WORD with dictionary list.
 Argument DICTIONARY-LIST the word that need transform."
   ;; Get translate object.
@@ -422,14 +433,40 @@ Argument DICTIONARY-LIST the word that need transform."
   ;; Record current translate object.
   (setq ydcv-current-translate-object word)
 
-  ;; Return translate result.
-  (let (cmd)
-    (ydcv-filter
-     (setq cmd (format "python %sydcv.py \"%s\"" default-directory word))
-     (shell-command-to-string cmd)
-     )))
+  (with-current-buffer (get-buffer-create ydcv-buffer-name)
+    (switch-to-buffer-other-window ydcv-buffer-name)
+    (setq buffer-read-only nil)
+    (erase-buffer)
 
-(ydcv-search-word "hello")
+    ;; Return translate result.
+    (let (cmd)
+      (insert
+       (ydcv-filter
+        (mapconcat
+         (lambda (dict)
+           (setq cmd (format "%sydcv.py -u \"%s\" \"%s\"" ydcv-el-directory dict word))
+           (shell-command-to-string cmd))
+         dictionary-list "\n"))))
+    (unless (eq (current-buffer) (ydcv-get-buffer))
+      (ydcv-goto-ydcv))
+    (ydcv-mode-reinit)
+    (other-window 1)
+    ))
+
+
+(defun ydcv-search-input (&optional word)
+  "Translate current input WORD.
+And show information in other buffer."
+  (interactive)
+  ;; Display details translate result.
+  (ydcv-search-word (or word (ydcv-prompt-input)) ydcv-dictionary-simple-list))
+
+;; (setq ydcv-dictionary-complete-list '(""))
+;; (ydcv-search-word "cat" ydcv-dictionary-simple-list)
+;; ;; TODO
+;; (ydcv-search-input "hello")
+;; (ydcv-search-detail "hello")
+
 
 
 (provide 'ydcv)

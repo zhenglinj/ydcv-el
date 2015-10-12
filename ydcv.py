@@ -217,12 +217,12 @@ if __name__ == "__main__":
     parser.add_argument('words', nargs='*',
                         help="words to lookup, or quoted sentences to translate.")
     parser.add_argument('--dictsdir',
-                        default=os.path.join(os.environ.get('HOME'),
-                                             '.stardict', 'dic'),
+                        default=os.path.join(os.environ.get('HOME'), '.stardict', 'dic'),
                         help="use this directory as path to stardict data directory. "
                              "Default to '$(HOME)/.stardict/dic'.")
     parser.add_argument('-u', '--usedict',
-                        default='',
+                        dest='usedict',
+                        action='append',  # AttributeError: 'unicode' object has no attribute 'append'
                         help="for search use only dictionary with this bookname. "
                              "Default to ALL dictionary.")
     parser.add_argument('-n', '--noninteractive',
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     for root, dirs, files in os.walk(options.dictsdir):
         for fn in files:
             if (fn.endswith('.dict.dz')
-                and fn.startswith(options.usedict)):
+                and (not options.usedict or fn.startswith(tuple(options.usedict)))):
                 dict_path = os.path.join(options.dictsdir, root, fn[:-8])
                 dicts.append(Dictionary(dict_path))
 

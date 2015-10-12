@@ -96,29 +96,11 @@
 
 ;;; Change log:
 ;;
-;; 2009/04/04
-;;      * Fix the bug of `ydcv-search-pointer'.
-;;      * Fix doc.
-;;        Thanks "Santiago Mejia" report those problems.
-;;
-;; 2009/04/02
-;;      * Remove unnecessary information from transform result.
-;;
-;; 2009/03/04
-;;      * Refactory code.
-;;      * Search region or word around point.
-;;      * Fix doc.
-;;
-;; 2009/02/05
-;;      * Fix doc.
-;;
-;; 2008/06/01
-;;      * First released.
 ;;
 
 ;;; Acknowledgements:
 ;;
-;;      pluskid@gmail.com   (Zhang ChiYuan)     for ydcv-mode.el
+;;      zhenglj1989@gmail.com   (Linjun zheng)     for ydcv-mode.el
 ;;
 
 ;;; TODO
@@ -144,7 +126,7 @@
   :type 'string
   :group 'ydcv)
 
-(defcustom ydcv-py-directory ""
+(defcustom ydcv-el-directory ""
   "The name of the buffer of ydcv."
   :type 'string
   :group 'ydcv)
@@ -440,13 +422,13 @@ Argument DICTIONARY-LIST the word that need transform."
 
     ;; Return translate result.
     (let (cmd)
-      (insert
-       (ydcv-filter
-        (mapconcat
-         (lambda (dict)
-           (setq cmd (format "%sydcv.py -u \"%s\" \"%s\"" ydcv-el-directory dict word))
-           (shell-command-to-string cmd))
-         dictionary-list "\n"))))
+      (setq cmd (format "%sydcv.py %s \"%s\""
+                        ydcv-el-directory
+                        (mapconcat (lambda (dict)
+                                     (concat "-u " dict))
+                                   dictionary-list " ")
+                        word))
+      (insert (ydcv-filter (shell-command-to-string cmd))))
     (unless (eq (current-buffer) (ydcv-get-buffer))
       (ydcv-goto-ydcv))
     (ydcv-mode-reinit)

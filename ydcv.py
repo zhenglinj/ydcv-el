@@ -172,9 +172,9 @@ def lookup_word(word):
 
 def print_explanation_sdcv(dict_name, data, options):
     _c = Colorizing.colorize
-    _d = '  '+'\n  '.join(data.split('\n'))
+    _d = '  '+'\n'.join([('  ' if l else '') + l.strip() for l in data.split('\n')])
     print(_c('--> '+dict_name, 'cyan'))
-    print(_d, '\n')
+    print(_d, '\n', sep='')
 
 
 def lookup_word_sdcv(dicts, word):

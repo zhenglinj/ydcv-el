@@ -240,7 +240,8 @@ if __name__ == "__main__":
 
     if options.words:
         for word in options.words:
-            lookup_word_sdcv(dicts, word)
+            if ' ' not in word:
+                lookup_word_sdcv(dicts, word)
             lookup_word(word)
     else:
         if options.selection:
@@ -253,7 +254,8 @@ if __name__ == "__main__":
                     if curr != last:
                         last = curr
                         if last.strip():
-                            lookup_word_sdcv(dicts, word)
+                            if ' ' not in last:
+                                lookup_word_sdcv(dicts, last)
                             lookup_word(last)
                         print("Waiting for selection>")
                 except (KeyboardInterrupt, EOFError):
@@ -270,7 +272,8 @@ if __name__ == "__main__":
                     else:
                         words = raw_input('> ')
                     if words.strip():
-                        lookup_word_sdcv(dicts, words)
+                        if ' ' not in words:
+                            lookup_word_sdcv(dicts, words)
                         lookup_word(words)
                 except KeyboardInterrupt:
                     print()

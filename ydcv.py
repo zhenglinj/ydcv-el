@@ -230,13 +230,15 @@ if __name__ == "__main__":
 
     options = parser.parse_args()
     # find all dictionary
-    dicts = []
+    dicts = [None]*len(options.usedict)
     for root, dirs, files in os.walk(options.dictsdir):
         for fn in files:
+            is_usedicts = [fn.startswith(d) for d in options.usedict]
             if (fn.endswith('.dict.dz')
-                and (not options.usedict or fn.startswith(tuple(options.usedict)))):
+                and (not options.usedict or any(is_usedicts))):
                 dict_path = os.path.join(options.dictsdir, root, fn[:-8])
-                dicts.append(Dictionary(dict_path))
+                dicts[is_usedicts.index(True)] = Dictionary(dict_path)
+    dicts = [d for d in dicts if d]
 
     if options.words:
         for word in options.words:

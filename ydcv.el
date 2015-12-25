@@ -311,7 +311,7 @@ The result will be displayed in buffer named with
   (setq ydcv-current-translate-object word)
 
   (with-current-buffer (get-buffer-create ydcv-buffer-name)
-    (switch-to-buffer-other-window ydcv-buffer-name)
+    (ydcv-goto-ydcv)
     (setq buffer-read-only nil)
     (erase-buffer)
 
@@ -325,10 +325,9 @@ The result will be displayed in buffer named with
                         word))
       (insert (ydcv-filter (shell-command-to-string cmd))))
     (unless (eq (current-buffer) (ydcv-get-buffer))
-      (ydcv-goto-ydcv))
+      (switch-to-buffer-other-window (ydcv-get-buffer)))
     (ydcv-mode-reinit)
-    (other-window 1))
-  )
+    ))
 
 (defun ydcv-search-args (word dict-list)
   "Search arguments WORD and DICT-LIST."
